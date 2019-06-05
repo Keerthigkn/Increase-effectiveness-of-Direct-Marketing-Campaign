@@ -1,0 +1,673 @@
+---
+title: "Project"
+author: "Keerthi Gopalakrishnan(M12931398)"
+output:
+  html_document:
+    code_folding: hide
+---
+  
+## Complete Journey customer transactions (with marketing campaigns){.tabset}
+  
+### **Introduction**
+  
+####**1. Objective**
+  
+  The objective of this project is to analyse and measure the effetiveness of campaigning, to mine association rules between products of America's largest supermarket chain and to come up with insights and recommendations.
+
+#####  **Why it matters**
+
+Marketing campaigns play a key role in increasing foot fall to supermarkets and incentivising the consumers to buy more. Since a large part of a retailer's margin is spent on marketing campaigns, it is crucial to ensure that the marketing campaigns are effective. A deep understanding of customer's buying behaviour can be uncovered through market basket analysis which will help the retailer to better place products in shelves and also to tailor campaigns to incentivize customers.
+
+
+
+
+#####  **What we are addressing**
+
+1) Analysis of sales by products when the campaign is on and off.
+2) Market Basket Analysis to mine the associations rules between products.
+
+
+
+
+
+####**2. Data & Methodology**
+
+The data set is used  [Complete Journey customer transactions(with marketing campaigns) ](https://www.dropbox.com/sh/7g8npy9k51dhtjm/AACOwFfvFSjw26fWNDZmaSS1a?dl=1). It has customer data of 2500 households
+for 2 years of the supermarket chain.
+
+The methodology followed was as follows:
+
+1)First, the data was cleaned and tidied.
+
+2)Exploratory data analysis and modelling techniques were applied.
+
+3)Insights were dervied from the results.
+
+####**3. Approach and Analytical Technique**
+
+1)Plots are made to compare sales uplift due to marketing campaigns by comparing it with baseline sales.
+
+2)Market basket analysis was performed to find associations between items that occur frequently together in transactions.
+
+####**4. How the analysis helps the consumer of the analysis**
+
+The analysis and insights derived provides actionable insights to the supermarket chain and will help improve campaign effectiveness and product placements.
+
+### **Packages Required**
+
+
+The following packages were used:
+
+knitr:      To write web-based reports
+
+kableExtra: To create and display a table of dataset description
+
+pander:     To use pipe function
+
+data.table: To use fread function
+
+stringr:    For sapply, lapply functions
+
+DT:         To display data tables in HTML document
+
+dplyr:      To use functions for data manipulation
+
+plyr:       To use the ddply function
+
+arules:     To use the read.transactions function in market basket analysis
+
+arulesViz:  To use interactive graphical relationship in market basket analysis
+
+tidyverse:  To use the ggplot function
+
+
+
+
+
+
+```{r,warning=FALSE,message=FALSE}
+
+
+pkgs <- c(
+
+"knitr" ,     #To write web-based reports
+"kableExtra" ,#To create and display a table of dataset description
+"pander",    #To use pipe function
+"data.table", #To use fread function
+"stringr",    #To perform string operations
+"DT",         #To display data tables in HTML document
+"dplyr",      #To use the pipe operator
+"plyr",       #To use the ddply function
+"arules",     #To use the read.transactions function in market basket analysis
+"arulesViz",  #To use interactive graphical relationship in market basket analysis
+"tidyverse",  #To use the ggplot function
+"plotly",     #To plot a plot_ly graph
+"grid",       #To plot graphs simultaneously in a grid
+"gridExtra"   #To plot graphs simultaneously in a grid
+
+)
+
+
+
+for (pkg in pkgs) {
+if (!(pkg %in% installed.packages()[, "Package"])) {
+install.packages(pkg)
+}
+}
+
+
+
+
+
+library(knitr)      #To write web-based reports
+library(kableExtra) #To create and display a table of dataset description
+library(pander)     #To use pipe function
+library(data.table) #To use fread function
+library(stringr)    #To perform string operations
+library(DT)         #To display data tables in HTML document
+library(dplyr)      #To use the pipe operator
+library(plyr)       #To use the ddply function
+library(arules)     #To use the read.transactions function in market basket analysis
+library(arulesViz)  #To use interactive graphical relationship in market basket analysis
+library(tidyverse)  #To use the ggplot function
+library(magrittr)   #To use the pipe operator
+library(gridExtra)  #To plot graphs simultaneously in a grid
+library(grid)       #To plot graphs simultaneously in a grid
+library(plotly)     #To plot graph using plot_ly
+#library(pander)     #To use 
+
+```
+
+
+
+
+### **Data Preparation**{.tabset}
+
+
+#### Data Source
+
+For this project the  [Complete Journey customer transactions (with marketing campaigns) ](https://www.dropbox.com/sh/7g8npy9k51dhtjm/AACOwFfvFSjw26fWNDZmaSS1a?dl=1) dataset has been used. It has customer data of *2500* households for *2 years* of the supermarket chain.
+
+\newline
+\newline
+
+####
+
+#### Data Import & Description
+
+The dataset contains several files that have been imported into individual dataframes.
+<br />
+
+
+
+```{r,warning=FALSE,message=FALSE}
+
+
+# Importing data from csv files
+
+
+
+Campaign_Description <- fread("data/campaign_desc.csv")
+Campaign_table <- fread("data/campaign_table.csv")
+Causal_Data <- fread("data/causal_data.csv")
+Coupon_Redemption_HH <- fread("data/coupon_redempt.csv")
+Coupon_Product_Data <- fread("data/coupon.csv")
+HH_Demographic <- fread("data/hh_demographic.csv")
+Product_Data <- fread("data/product.csv")
+Transaction_Data <- fread("data/transaction_data.csv")
+
+
+
+
+# Creating table metrics for display
+
+table_name <- c("Campaign_Description",
+                "Campaign_table",
+                "Causal_Data",
+                "Coupon_Redemption_HH",
+                "Coupon_Product_Data",
+                "HH_Demographic",
+                "Product_Data",
+                "Transaction_Data")
+
+num_rows_tables <- c(nrow(Campaign_Description)
+                     ,nrow(Campaign_table)
+                     ,nrow(Causal_Data)
+                     ,nrow(Coupon_Redemption_HH)
+                     ,nrow(Coupon_Product_Data)
+                     ,nrow(HH_Demographic)
+                     ,nrow(Product_Data)
+                     ,nrow(Transaction_Data))
+
+num_col_tables <- c(ncol(Campaign_Description),
+                    ncol(Campaign_table),
+                    ncol(Causal_Data),
+                    ncol(Coupon_Redemption_HH),
+                    ncol(Coupon_Product_Data),
+                    ncol(HH_Demographic),
+                    ncol(Product_Data),
+                    ncol(Transaction_Data))
+
+descrip_tables <- c(" This table gives the length of time for which a campaign runs","This table lists the campaigns received by each household in the study",
+"This table signifies whether a given product was featured in the weekly mailer or was part of an in-store display","This table identifies the coupons that each household redeemed",
+"This table lists all the coupons sent to customers as part of a campaign, as well as the products for which each coupon is redeemable",
+"This table contains demographic information for a portion of households",
+"This table contains information on each product sold such as type of product, national or private label and a brand identifier",
+"This table contains all products purchased by households within this study ")
+
+
+
+# Displaying table matrics in a tabular form
+
+dt_1 <- data.frame(Table_Name = table_name,
+           Num_Rows = num_rows_tables, Num_Columns = num_col_tables , Table_Description = descrip_tables) 
+kable(dt_1) %>%
+  kable_styling(bootstrap_options = c("striped", "hover","condensed", "responsive"))
+```
+
+\newline
+\newline
+
+
+
+#### Data Cleaning
+
+With the ineterst of taking a deep dive into the analysis of campaign effectiveness and market basket analysis, following were the measures taken to arrive onto the final dataset.
+
+**1. Join Transaction and Coupon Tables**
+
+* The transaction table contains important information on sales and quantity of the products. The coupon table contains relevant information on the campaign description and type.
+* These two tables are joined using Product_id as the key
+
+```{r cleaning1, warning=FALSE, message=FALSE}
+
+#Merging the Transaction and Product Data
+transact_prod <- merge(Transaction_Data, Product_Data, by = "product_id")
+transact_prod <- na.omit(transact_prod)
+trans_product <- full_join(Transaction_Data,Coupon_Product_Data,by = "product_id",copy = F)
+trans_product_campaign <- inner_join(Transaction_Data,Coupon_Product_Data,by = "product_id",copy = F)
+trans_product_no_campaign <- bind_rows(anti_join(Transaction_Data, Coupon_Product_Data), anti_join(Coupon_Product_Data, Transaction_Data))
+```
+
+* On joining, three subsequent tables were formulated.
+* trans_product - conatins all the data in Transaction_Data and Coupon_Product_Data
+* trans_product_campaign - table that contains only products that were camapigned
+* trans_product_no_campaign - table that conatins only products that were not campained
+* The resulting data contains NA values, however those have been omitted during analysis.
+
+```{r, warning = FALSE}
+#displaying cleaned data
+
+trans_product_subset <- head(trans_product, n = 100)
+datatable(trans_product_subset ,options = list(pageLength = 3))
+
+trans_product_campaign_subset <- head(trans_product_campaign, n = 100)
+datatable(trans_product_campaign_subset ,options = list(pageLength = 3))
+
+trans_product_no_campaign_subset <- head(trans_product_no_campaign, n = 100)
+datatable(trans_product_no_campaign_subset ,options = list(pageLength = 3))
+
+```
+
+**2. Join Campaign Description Table with trans_product_campaign**
+
+The tables have been merged in order to get the duration that the camapign was active for
+
+* First, the Campaign_Description_week_info data set has been generated which contains new columns, that indicate start week and end week calculated from start day and end day
+* This new set is called Campaign_Description_week_info
+
+```{r cleaning 2, warning = FALSE}
+
+Campaign_Description_week_info <-
+  Campaign_Description  %>%
+  mutate(week_start = floor(start_day/7), week_end = floor(end_day/7)) %>%
+  select(-c(start_day,end_day))
+
+```
+
+* Second, the Campaign_Description_week_info has been joined with trans_product_campaign
+* Third, a new and important categorical variable 'Campaign_Active' has been introduced into the set which indicates if the transaction was made when the camapign was active or not
+* The duration of the camapign has been calculated as a difference of week start and end.
+* Finally, the NA has been omitted in the final set
+
+```{r, warning = FALSE}
+
+trans_product_camp <-
+  full_join(trans_product,Campaign_Description_week_info,by = "campaign",copy = F)
+trans_product_camp <-
+  mutate(trans_product_camp, Campaign_Active = ifelse( week_no >= week_start & week_no <= week_end, "Yes", "No"))
+trans_product_camp_cleaned <- na.omit(trans_product_camp)
+trans_product_camp_cleaned$campaign_duration <-
+  trans_product_camp_cleaned$week_end - trans_product_camp_cleaned$week_start
+
+```
+
+* The final trans_product_camp_cleaned dataset is as follows:
+
+```{r , warning = FALSE}
+
+trans_product_camp_cleaned_subset <- head(trans_product_camp_cleaned, n = 100)
+datatable(trans_product_camp_cleaned_subset ,options = list(pageLength = 3))
+
+```
+
+
+
+
+### **Exploratory Data Analysis**{.tabset}
+
+
+
+#### Campaign Effectiveness
+
+The greatest mode of interaction with consumers id through campaigns. This section concentrates on the efectiveness of campaigns by analysing the sales and quantity of products over the week duration of the campaign being ON and OFF.
+
+Following table gives the basic understanding of the total number of transactions that have occured when the campaign was active and inactive:
+
+```{r comparison_table , warning = FALSE, message = FALSE}
+
+options(digits = 4)
+
+#calculating number of rows of transactions that were made when campaign was off and on
+
+num_rows_camp_on <- nrow(trans_product_camp[trans_product_camp$Campaign_Active == 'Yes',])
+num_rows_camp_off <- nrow(trans_product_camp[trans_product_camp$Campaign_Active == 'No',])
+
+disp_Coupon_Product_Data <-
+  data.frame(
+    Category = c("products bought during campaign","products bought when no campaign"),
+    Num_Products = c(num_rows_camp_on,num_rows_camp_off),
+    Perecentage = c((num_rows_camp_on*100/nrow(trans_product_camp)),
+               (num_rows_camp_off*100/nrow(trans_product_camp))),
+                                       row.names = NULL)
+#displaying the table of percentage of rows
+
+kable(disp_Coupon_Product_Data) %>%
+kable_styling(bootstrap_options = c("striped", "hover","condensed", "responsive"))
+
+```
+
+From the above table it is evident that users have bought more products when that particular product's campaign was not active, than when it was active.
+
+**Taking a deeper dive into statistics when camapign was active and not:**
+
+```{r, warning=FALSE , message= FALSE}
+library(gridExtra)
+library(grid)
+
+options(width = 350)
+
+#geberating ggplot to show the total camapign effectiveness by campaign off or on
+
+agg <-
+  trans_product_camp_cleaned %>%
+  group_by(campaign_duration,Campaign_Active,campaign) %>%
+  summarise(agg = sum(sales_value))
+p5 <- ggplot(data = agg, aes(x = campaign_duration, y = agg, fill = Campaign_Active)) +
+  geom_bar(stat = "identity") + ylab("Aggregated Sales by Campaign Duration") + ggtitle("Sales vs Campaign Duration")
+agg <-
+  trans_product_camp_cleaned %>%
+  group_by(campaign_duration,Campaign_Active) %>%
+  summarise(agg = sum(quantity))
+p6 <- ggplot(data = agg, aes(x = campaign_duration, y = agg, fill = Campaign_Active)) +
+  geom_bar(stat = "identity") + ylab("Aggregated Quantity by Campaign Duration") +
+  ggtitle("Quantity vs Campaign Duration")
+
+grid.arrange(p5, p6, ncol = 2)
+```
+
+From the above graph following are the inferences:
+
+* Products which have camapigns of same duration were observed to have been bought more so during off camapign period.
+* Since the duration of the products' campaigns are the same, they can be compared on basis of effectiveness.
+* The above charts provide some evidence that there is a need for camapigns to be revised and deployed for a dominating role of camapign effectiveness to be visible.
+
+
+**Analysing Top 50 Transactions in terms of Sales**
+
+```{r, warning = FALSE, message = FALSE}
+
+# generating the table for top 50 and ordering by sales and quantity
+
+trans_product_camp_cleaned_top_50_sales <-
+  tail(trans_product_camp_cleaned[order(trans_product_camp_cleaned$sales_value),] ,50)
+trans_product_camp_cleaned_top_50_quantity <-
+  tail(trans_product_camp_cleaned[order(trans_product_camp_cleaned$quantity),] ,50)
+
+# plotting graph for campaigns that are effective and not
+
+p <- plot_ly(trans_product_camp_cleaned_top_50_sales,
+        x = trans_product_camp_cleaned_top_50_sales$campaign_duration,
+        y = trans_product_camp_cleaned_top_50_sales$sales_value,
+        text = paste("Campaign: ", trans_product_camp_cleaned_top_50_sales$campaign),
+        mode = "markers",
+        color = trans_product_camp_cleaned_top_50_sales$Campaign_Active,
+        size = trans_product_camp_cleaned_top_50_sales$quantity) %>%
+        layout(title = 'Top 50 Sales Analysis',
+               xaxis = list(title = 'Campaign Duration (weeks)',
+                            zeroline = TRUE),
+               yaxis = list(title = 'Sales Amount'))
+p
+
+```
+
+* The above graph was plotted with an aim of analysis the top 50 sales, their camapigns, duration, quantity as size of point, and wether they were bought when camapign was on or off. Where green inidcates camapign not on, and blue campaign on.
+* It was observed that campaign 13 and 8 have worked well as the customers have pucrhased products that have great quantity and contributes to sales by above 300.
+* While products under campaign 18 incurred a lot of sales, it was not while the camapign was on.
+
+**Analysis of Campaign performance over the weeks**
+
+```{r, warning= FALSE , message = FALSE}
+
+# aggregating data based on week_no
+
+aggregated_data <- group_by(trans_product_camp_cleaned, product_id)
+new_prod_data <- summarise(aggregated_data, num_states = n_distinct(Campaign_Active), num_prods = n())
+prod_on_off_camp <- filter(new_prod_data, num_states == 2)
+prod_id_on_off_camp <- c(prod_on_off_camp$product_id)
+complete_prod_on_off_data <- filter(trans_product_camp, trans_product_camp$product_id %in% prod_id_on_off_camp)
+
+# generating plots for the aggregated sales and quantity by week
+
+agg <- complete_prod_on_off_data %>% group_by(week_no) %>% summarise(agg = sum(quantity))
+p3 <- ggplot(agg, aes(week_no, agg )) + geom_point() + 
+  ylab("Quantity Aggregated by Week") + xlab("Week") + geom_line() +
+  ggtitle("Quantity of Product sold each week")
+
+agg <- complete_prod_on_off_data %>% group_by(week_no) %>% summarise(agg = uniqueN(campaign))
+p4 <- ggplot(agg, aes(week_no, agg )) + geom_point() + 
+  ylab("Number of Campaigns Aggregated by Week") + xlab("Week") + geom_line() +
+  ggtitle("No. of Campaigns Active by week")
+
+grid.arrange(p3, p4, ncol = 2)
+
+c <- complete_prod_on_off_data[complete_prod_on_off_data$week_no == 1,"campaign"]
+c1 <- complete_prod_on_off_data[complete_prod_on_off_data$week_no == 25,"campaign"]
+
+```
+
+* Finally, from a hollistic perspective, week over week, the number of products sold have certainly increased as the campaigns have increased.
+* The peak being in week 60, having maximum products being sold then
+* This intuitively suggests that campaigns in week 60 have made an impact on clients
+* 13 18  8 were found to be the common campaigns in that week range
+* campaign 15 was found to be that camapign which cause the jump between 0 to 25
+
+
+
+#### Market Basket Analysis
+
+
+Market Basket Analysis is a popular modelling technique that helps to find associations between products. It helps us to understand what products are frequently bought together. This understanding can help retailers to identify what products must be placed together and also to better tailor campaigns to incentivize customers.
+
+To understand the associtions better as a first step, the mean number of products a customer purchases per transaction was plotted.
+The graph is as follows:
+
+```{r, warning=FALSE}
+
+# Mean no of products bought by customers per transaction
+detach("package:plyr", unload=TRUE) # detaching plyr to use the summarize from dplyr
+transact_prod  %>%
+  group_by(basket_id) %>%
+  summarize(n_items = mean(quantity))%>%
+  ggplot(aes(x = n_items)) +
+  ggtitle("Mean no of products bought by customers per transaction")+
+  geom_histogram(fill = "pink", bins = 100000) + 
+  geom_rug()+
+  coord_cartesian(xlim=c(0,10))
+
+```
+
+We can see that the number of items most commonly purchases in a transaction is approximately 1.
+
+
+Next, the products that are not so popular were identified. Below is a graph that displays the 10 products just below the 25th percentile.
+
+```{r, message=FALSE, warning=FALSE}
+
+# To identify the most popular products by count 
+
+tran_prod <- transact_prod %>%
+  group_by(product_id, sub_commodity_desc) %>% 
+  summarize(count = n()) %>% 
+  arrange(count)
+
+
+# To group by sub commodity description and summarize by frequency of occurence
+tran_prod_grouped <- summarize(group_by(tran_prod , sub_commodity_desc), count = sum(count))
+
+# To get the 25h percentile row number and make it the lower bound
+lower_bound <- (dim(tran_prod_grouped)[1]*.75)
+
+
+# To filter to get the products just below the median
+tran_prod_grouped_filtered <- filter(tran_prod_grouped, (row_number(desc(count)) >= lower_bound & row_number(desc(count)) <= lower_bound + 10))
+
+# Plotting the 10 products by frequency just below 25th percentile
+
+tran_prod_grouped_filtered  %>%
+  ggplot(aes(x= sub_commodity_desc, y=count))+
+  geom_bar(stat="identity",fill="orange")+
+  ggtitle("Products just below 25 percentile by frequency")+
+  coord_flip()
+
+
+```
+
+The top 10 products by abosulute frequency of purchase were identified and a graph was plotted as below:
+
+```{r, message=FALSE, warning=FALSE}
+
+tran_prod_grouped_filtered <- filter(tran_prod_grouped, (row_number(desc(count)) <= 20))
+
+# Plotting the most popular products by frequency
+
+tran_prod_grouped_filtered  %>%
+  ggplot(aes(x= sub_commodity_desc, y=count))+
+  geom_bar(stat="identity",fill="violet")+
+  ggtitle("Most popular products by frequency") +
+  coord_flip()
+
+
+```
+
+
+
+
+
+
+
+
+Next, a list of all the items that were bought together in any transaction was made. These items were written into a csv file by the name "basket.csv". The csv is opened and checked for accuracy.
+
+```{r, message=FALSE, warning=FALSE, results="hide"}
+
+#To make a list of item by basket id for market basket analysis
+
+library(plyr)
+
+transaction_prod_sorted <- transact_prod[order(transact_prod$household_key),]
+
+items <- ddply(transaction_prod_sorted,c("household_key","trans_time"), 
+               function(df)paste(df$sub_commodity_desc,collapse = ","))
+
+# Assigning null values to the columns we do not need anymore in itemList
+items$household_key <- NULL
+items$trans_time<- NULL
+colnames(items) <- c("items")
+
+# Writing the items to a csv file to check for accuracy
+
+write.csv(items,"basket.csv", quote = FALSE, row.names = TRUE)
+
+
+#library(arules)
+basket_item <- read.transactions('basket.csv', format = 'basket', sep=',')
+# Plotting the top 20 items by relative frequency
+#itemFrequencyPlot(basket_item, topN=20, type='absolute', main = "Item Frequency Plot")
+
+
+
+```
+
+
+The rules for association were defined using the apriori function in the package arules.
+
+```{r, message=FALSE, warning=FALSE,results="hide"}
+
+#Rules for association
+
+
+
+rules <- apriori(basket_item, parameter = list(supp=0.001, conf=0.8))
+rules <- sort(rules, by='confidence', decreasing = TRUE)
+
+
+```
+
+
+Next, an interactive graph displaying the top 10 associations was drawn. The plot is as follows. Individual rules can be clicked on or selected from the dropdown to highlight them. Also, hovering over the nodes displays a popup stating the relationship along with confidence, lift and support.
+
+```{r, message=FALSE, warning=FALSE}
+
+#plot interactive graphical relationship of top rules
+
+
+plot(rules[1:5], method = "graph",  engine = "htmlwidget")
+
+```
+
+The first rule can be interpreted as 91.66 %  customers who bought the products Chocolate Milk, Kids Cereal, Mainstream White Bread, Soft Drinks 12/18&15PK CAN CAr also bought the product "Fluid White Milk Only" and so on for each rule.
+
+**Confidence** is the percentage of customers who bought the item on the lhs who also bought the item on the rhs.
+
+**Support** is the probability of buying the item on the lhs along with the item on the rhs.
+
+**Lift** is the confidence divided by the probability of buying the item on the lhs.
+
+We can see from Rule 5 that 90.3 % customers who bought COndiments / Supplies also bought Salad Bar Fresh Fruit. All the other rules are around associations that lead to purchasing the product "Fluid White Milk Only". This is also the most popular product by frequency as seen from the earlier plot. 
+
+
+To identify the associations in which the product "Fluid White Milk Only" is not involved, this product was removed from the list of items and the items were written to a csv file, basket_no_milk.csv to check for accuracy.
+
+```{r, message=FALSE, warning=FALSE, resuts="hide"}
+
+
+# replacing all occurences of "FLUID MILK WHITE ONLY" with empty string in the the items list
+
+items_nomilk <- str_replace_all(items$items, "FLUID MILK WHITE ONLY", "")
+
+# Writing the items without milk to a csv file to check for accuracy
+
+write.csv(items_nomilk,"basket_no_milk.csv", quote = FALSE, row.names = TRUE)
+
+# Reading transactions from basket_no_milk
+
+basket_no_milk_item <- read.transactions('basket_no_milk.csv', format = 'basket', sep=',')
+```
+
+The rules were formualted again using the apriori function
+
+```{r, message=FALSE, warning=FALSE, resuts="hide", echo=FALSE}
+
+# Rules for the items excluding "FLUID MILK WHITE ONLY"
+
+rules_no_milk <- apriori(basket_no_milk_item, parameter = list(supp=0.001, conf=0.8))
+
+rules_no_milk <- sort(rules_no_milk, by='confidence', decreasing = TRUE)
+
+```
+
+We can see from above that when there is no maximum length specified for rules, apriori takes 10 as the maximum length.
+
+The rules after excluding the product "FLUID MILK WHITE ONLY" have been plotted interactively below:
+```{r, message=FALSE, warning=FALSE}
+options(width = 250)
+#top_rules_no_milk<- rules_no_milk[1:10]
+
+#plot interactive graphical relationship of top rules when "FLUID MILK WHITE ONLY" is excluded from the items"
+
+plot(rules_no_milk[1:10], method = "graph",  engine = "htmlwidget")
+```
+
+We can see a lot of interesting assocaitions here. For example, in rule 2 we can see that 86.2 % of the customers who bought Frosting and Vegetable/Salad Oil also bought Layer Cake Mix. Hence, placing these products together will help improve sales of Layer Cake Mix. Also campaigns for Frosting and Vegetable / Salad Oil can help improve sales for Layer Cake Mix.
+
+
+
+
+
+### **Conclusions**
+
+1) **Campaign Effectiveness**
+
+* The campaigns were found to be 24.72% effective on the whole. On further analysis, it was found that camapigns number 13, 8 and 18 were extremely effective on consumers.
+* By and large, camapigns need to be restructured for more conversions, as it was found that products are being bought more so when there is no campaign going on for that product that when there is one.
+* Since the strategy of the afforementioned camapigns worked, it can be safe to say that following a similar strategy for other campaigns will be effective.
+* However, there was an increase in sales as the the number of campaigns increased.
+
+
+2) **Market Basket Analysis**
+
+* The product "FLUID MILK WHITE ONLY" is the most popular product by frequency. Also 9 out of the top 10 associations found after performing market basket analysis tell us that this product is bought along with CHOCOLATE MILK,KIDS CEREAL, MAINSTREAM WHITE BREAD,  SOFT DRINKS 12/18&15PK CAN CAR , MACARONI & CHEESE DNRS,BANANAS, EGGS - LARGE, MAINSTREAM WHEAT/MULTIGRAIN BR, SHREDDED CHEESE, ALL FAMILY CEREAL, POURABLE SALAD DRESSINGS and DAIRY CASE 100% PURE JUICE. Therefore placing the product "FLUID MILK WHITE ONLY" next to one of these products can help improve sales. Placing the product "FLUID MILK WHITE ONLY" with one of these products can help improve sales.
+Similarly, the product, Salad Bar Fresh Fruit is bought along with Condiments & Supplies. Hence, placing Salad Bar Fresh Fruit next to Condiments & Supplies can help increse its sales.
+
+* Also, campaigns can be tailored to better incentivize customers keeping these top associations in mind. For example, a campaign on Condiments & Supplies can lead to increase in sales of Salad Bar Fresh Fruit with 80 % confidence.
